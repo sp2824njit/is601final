@@ -1,7 +1,8 @@
 import sqlite3
+from time import time
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from time import time
+
 
 app = FastAPI()
 
@@ -25,7 +26,11 @@ class OrderModel(BaseModel):
 
 
 def get_db_connection() -> sqlite3.Connection:
-    return sqlite3.connect('db.sqlite')
+    resulting_conn = sqlite3.connect('db.sqlite')
+    with resulting_conn:
+        db_cursor = resulting_conn.cursor()
+        db_cursor.execute('PRAGMA foreign_keys= ON;') # Needed in order for ON DELETE CASCADE foreign key action to work
+    return resulting_conn
 
 @app.get('/customers/{customer_id}')
 async def get_customers(customer_id: int):
@@ -71,6 +76,8 @@ async def get_orders(order_id: int):
         sql_result: list[tuple] = db_cursor.fetchall()
     db_conn.close()
     item_id_list = []
+    if not sql_result:
+        raise HTTPException(404, "Item Not Found")
     for db_order_id, db_order_notes, db_customer_id, db_order_timestamp, db_item_id in sql_result:
         ret_order_id = db_order_id
         ret_order_notes = db_order_notes

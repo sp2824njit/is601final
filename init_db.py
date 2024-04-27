@@ -7,8 +7,8 @@ with db_conn:
     # SQL statments to create DB schema
     customer_create_sql = 'CREATE TABLE IF NOT EXISTS Customers (id integer NOT NULL, name varchar(100), phoneNum varchar(20), PRIMARY KEY (id));'
     items_create_sql = 'CREATE TABLE IF NOT EXISTS Items (id integer NOT NULL, name varchar(100), price float, PRIMARY KEY (id));'
-    orders_create_sql = 'CREATE TABLE IF NOT EXISTS Orders (id integer NOT NULL, customerId int, notes varchar(255), timestamp integer, PRIMARY KEY (id), CONSTRAINT fk_customerid FOREIGN KEY (customerId) REFERENCES Customers(id));'
-    order_list_create_sql = 'CREATE TABLE IF NOT EXISTS OrderList (id integer NOT NULL, orderId integer, itemId integer, PRIMARY KEY (id), CONSTRAINT fk_orderId FOREIGN KEY (orderId) REFERENCES Orders(id), CONSTRAINT fk_itemId FOREIGN KEY (itemId) REFERENCES Items(id))'
+    orders_create_sql = 'CREATE TABLE IF NOT EXISTS Orders (id integer NOT NULL, customerId int, notes varchar(255), timestamp integer, PRIMARY KEY (id), CONSTRAINT fk_customerid FOREIGN KEY (customerId) REFERENCES Customers(id) ON DELETE CASCADE);'
+    order_list_create_sql = 'CREATE TABLE IF NOT EXISTS OrderList (id integer NOT NULL, orderId integer, itemId integer, PRIMARY KEY (id), CONSTRAINT fk_orderId FOREIGN KEY (orderId) REFERENCES Orders(id) ON DELETE CASCADE, CONSTRAINT fk_itemId FOREIGN KEY (itemId) REFERENCES Items(id) ON DELETE CASCADE)'
     
     # Creating tables in DB
     db_cursor = db_conn.cursor()
