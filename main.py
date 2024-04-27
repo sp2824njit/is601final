@@ -140,15 +140,12 @@ async def create_order(order_payload: OrderModel):
             sql_result = db_cursor.fetchone()
             if sql_result[0] == 0:
                 raise HTTPException(400, f'Item ID {input_item_id} not found')
-            
         order_sql_stmt = 'INSERT INTO Orders (customerId, notes, timestamp) VALUES (?,?,?)'
         db_cursor.execute(order_sql_stmt, (order_payload.customer_id, order_payload.notes, int(time())))
-        new_order_id = db_cursor.lastrowid
-        
+        new_order_id = db_cursor.lastrowid        
         for input_item_id in order_payload.item_ids:
             order_list_sql_stmt = 'INSERT INTO OrderList (orderId, itemId) VALUES (?,?)'
             db_cursor.execute(order_list_sql_stmt, (new_order_id, input_item_id))
-            
     db_conn.close()
     return {'orderId': new_order_id}
 
@@ -207,7 +204,7 @@ async def update_customer(customer_id: int, customer_payload: CustomerModel):
         rows_changed = db_conn.total_changes
     db_conn.close()
     if rows_changed == 0:
-            raise HTTPException(404, 'Item not found')
+        raise HTTPException(404, 'Item not found')
     return customer_payload
 
 
