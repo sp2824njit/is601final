@@ -223,10 +223,35 @@ async def update_item(item_id: int, item_payload: ItemModel):
         rows_changed = db_conn.total_changes
     db_conn.close()
     if rows_changed == 0:
-            raise HTTPException(404, 'Item not found')
+        raise HTTPException(404, 'Item not found')
     return item_payload
 
 
 @app.put('/orders/{order_id}')
-async def update_order(order_id: int):
-    pass
+async def update_order(order_id: int, order_payload: OrderModel):
+    if order_id != order_payload.order_id:
+        raise HTTPException(400, 'Mismatching order IDs')
+    db_conn = get_db_connection()
+    with db_conn:
+        db_cursor = db_conn.cursor()
+        db_cursor.execute('UPDATE Orders SET customerId=?, notes=? WHERE id=?',
+                          (order_payload.customer_id, order_payload.notes, order_id))
+        rows_changed = db_conn.total_changes
+    if rows_changed == 0:
+        raise HTTPException(404, 'Item not found')
+    with db_conn:
+        db_cursor = db_conn.cursor()
+        db_cursor.execute('SELECT itemId FROM OrderList WHERE orderId=?', (order_id,))
+        sql_result: list[tuple] = db_cursor.fetchall()
+        existing_item_ids = {sql_item_id for (sql_item_id,) in sql_result}
+        payload_item_ids = set(order_payload.item_ids)
+        item_ids_to_remove = existing_item_ids - payload_item_ids
+        item_ids_to_insert = payload_item_ids - existing_item_ids
+        for item_id_to_remove in item_ids_to_remove:
+            db_cursor.execute('DELETE FROM OrderList WHERE OrderId=? AND ItemId=?',
+                              (order_id, item_id_to_remove))
+        for item_id_to_add in item_ids_to_insert:
+            db_cursor.execute('INSERT INTO OrderList (orderId, itemId) VALUES (?,?)',
+                              (order_id, item_id_to_add))
+    db_conn.close()
+    return order_payload
